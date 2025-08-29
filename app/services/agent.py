@@ -17,7 +17,7 @@ if not GOOGLE_API_KEY:
 lesson_plan_agent = Agent(
     model=Gemini(api_key=GOOGLE_API_KEY, id="gemini-2.5-flash"),
     description="You are an expert educational consultant specializing in lesson planning and curriculum development. You help teachers create engaging, standards-aligned lesson plans that incorporate best practices in pedagogy.",
-    tools=[DuckDuckGoTools()],
+    tools=[],
     show_tool_calls=True,
     markdown=True
 )
@@ -37,7 +37,7 @@ term_plan_agent = Agent(
 assessment_agent = Agent(
     model=Gemini(api_key=GOOGLE_API_KEY, id="gemini-2.5-flash"),
     description="You are an assessment expert who creates high-quality educational assessments including quizzes, tests, and projects. You ensure assessments are aligned with learning objectives and provide meaningful feedback opportunities.",
-    tools=[DuckDuckGoTools()],
+    tools=[],
     show_tool_calls=True,
     markdown=True
 )
