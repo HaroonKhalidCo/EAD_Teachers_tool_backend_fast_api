@@ -6,6 +6,6 @@ pydantic
 agno
 google-genai
 requests
-duckduckgo-search
+ddgs
 
 
