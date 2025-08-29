@@ -13,7 +13,7 @@ class LessonPlanResponse(BaseModel):
     
     syllabus_filename: str = Field(
         ..., 
-        description="Name of the uploaded syllabus file"
+        description="Name or identifier of the syllabus content used"
     )
     
     number_of_classes: int = Field(

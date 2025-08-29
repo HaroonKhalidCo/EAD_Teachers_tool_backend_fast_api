@@ -5,15 +5,18 @@ from typing import Optional
 class LessonPlanRequest(BaseModel):
     """Request schema for generating a lesson plan based on the UI form"""
     
-    syllabus_file: bytes = Field(
+    syllabus_content: str = Field(
         ...,
-        description="The content of the syllabus PDF file to upload"
+        description="The text content of the syllabus or curriculum to base the lesson plan on",
+        min_length=10,
+        example="Mathematics curriculum covering algebra fundamentals including linear equations, inequalities, and graphing. Students will learn to solve equations, graph linear functions, and apply algebraic concepts to real-world problems."
     )
     
     number_of_classes: int = Field(
         1,
         description="The number of classes for which to generate lesson plans",
-        ge=1
+        ge=1,
+        le=20
     )
     
     class_duration: str = Field(

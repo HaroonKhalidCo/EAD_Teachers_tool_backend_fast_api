@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException
 from typing import List
 import uuid
 from datetime import datetime
@@ -12,41 +12,78 @@ router = APIRouter()
 
 @router.post("/generate", response_model=LessonPlanResponse)
 async def generate_lesson_plan(
-    syllabus_file: UploadFile = File(...),
-    number_of_classes: int = 1,
-    class_duration: str = "45 minutes",
-    teaching_style: str = "Interactive",
-    homework_level: str = "Moderate"
+    request: LessonPlanRequest
 ):
-    """Generate a lesson plan based on uploaded syllabus and preferences"""
+    """Generate a detailed lesson plan based on syllabus content and preferences"""
     
     try:
-        # Validate file type
-        if not syllabus_file.filename.endswith('.pdf'):
-            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
-        
-        # Read file content
-        syllabus_content = await syllabus_file.read()
-        
-        # Create system prompt for the agent
+        # Create comprehensive system prompt for the agent
         system_prompt = f"""
-        Generate a comprehensive lesson plan based on the following requirements:
+        Generate a comprehensive and detailed lesson plan based on the following requirements:
         
-        Syllabus: {syllabus_file.filename}
-        Number of Classes: {number_of_classes}
-        Class Duration: {class_duration}
-        Teaching Style: {teaching_style}
-        Homework Level: {homework_level}
+        Syllabus Content: {request.syllabus_content}
+        Number of Classes: {request.number_of_classes}
+        Class Duration: {request.class_duration}
+        Teaching Style: {request.teaching_style}
+        Homework Level: {request.homework_level}
         
-        Please create a detailed lesson plan that includes:
-        1. Learning objectives
-        2. Lesson structure and activities
-        3. Assessment methods
-        4. Homework assignments (appropriate for {homework_level} level)
-        5. Teaching strategies aligned with {teaching_style} style
-        6. Timeline for {number_of_classes} classes of {class_duration} each
+        Please create a detailed, structured lesson plan that includes:
         
-        Make the plan engaging, practical, and aligned with educational best practices.
+        1. LEARNING OBJECTIVES
+           - Clear, measurable learning outcomes
+           - Specific skills and knowledge students will acquire
+           - Alignment with educational standards
+        
+        2. LESSON STRUCTURE AND ACTIVITIES
+           - Detailed breakdown for each class session
+           - Engaging activities and exercises
+           - Time allocation for each activity
+           - Student engagement strategies
+        
+        3. TEACHING STRATEGIES
+           - Methods aligned with {request.teaching_style} teaching style
+           - Differentiation strategies for diverse learners
+           - Classroom management techniques
+           - Use of technology and resources
+        
+        4. ASSESSMENT METHODS
+           - Formative assessment strategies
+           - Summative assessment options
+           - Student progress monitoring
+           - Feedback mechanisms
+        
+        5. HOMEWORK ASSIGNMENTS
+           - Level-appropriate assignments for {request.homework_level} level
+           - Clear instructions and expectations
+           - Connection to classroom learning
+           - Estimated completion time
+        
+        6. TIMELINE AND PACING
+           - Detailed schedule for {request.number_of_classes} classes
+           - Each class duration: {request.class_duration}
+           - Pacing recommendations
+           - Flexibility considerations
+        
+        7. RESOURCES AND MATERIALS
+           - Required materials and equipment
+           - Digital resources and tools
+           - Supplementary reading materials
+           - Safety considerations if applicable
+        
+        8. EVALUATION AND REFLECTION
+           - Success criteria for the lesson
+           - Reflection questions for teachers
+           - Student self-assessment opportunities
+           - Areas for improvement and adaptation
+        
+        Make the plan:
+        - Practical and implementable in real classroom settings
+        - Engaging and student-centered
+        - Aligned with educational best practices
+        - Detailed enough for teachers to follow without additional planning
+        - Flexible enough to adapt to different student needs
+        
+        Format the response in a clear, structured manner that teachers can easily read and implement.
         """
         
         # Get agent when needed
@@ -66,11 +103,11 @@ async def generate_lesson_plan(
         # Create response object
         lesson_plan = LessonPlanResponse(
             id=str(uuid.uuid4()),
-            syllabus_filename=syllabus_file.filename,
-            number_of_classes=number_of_classes,
-            class_duration=class_duration,
-            teaching_style=teaching_style,
-            homework_level=homework_level,
+            syllabus_filename="Curriculum-based syllabus",
+            number_of_classes=request.number_of_classes,
+            class_duration=request.class_duration,
+            teaching_style=request.teaching_style,
+            homework_level=request.homework_level,
             generated_plan=generated_content,
             created_at=datetime.utcnow(),
             status="completed"
