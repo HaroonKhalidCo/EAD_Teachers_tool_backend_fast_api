@@ -11,6 +11,14 @@ AI-powered educational tools for teachers including lesson planning, assessment 
 - **Teacher Assistant**: Professional guidance for teachers
 - **Homework Generator**: Create engaging homework assignments
 
+## Security Features
+
+- **Environment-based Configuration**: Automatic security hardening in production
+- **CORS Protection**: Configurable cross-origin resource sharing
+- **Container Security**: Non-root user, minimal base image, health checks
+- **Rate Limiting**: Built-in protection against abuse
+- **Secure Headers**: Production-ready security middleware
+
 ## Setup
 
 ### 1. Install Dependencies
@@ -21,18 +29,33 @@ pip install -r requirements.txt
 
 ### 2. Environment Variables
 
-Create a `.env` file in the root directory:
+Run the setup script to create a `.env` file:
+
+```bash
+python setup_env.py
+```
+
+Or manually create a `.env` file in the root directory:
 
 ```env
-# Google Gemini API Key
+# API Keys
 GOOGLE_API_KEY=your_google_api_key_here
 
 # Server Configuration
 HOST=0.0.0.0
 PORT=8000
-
-# Environment
 ENVIRONMENT=development
+
+# Security Configuration
+SECRET_KEY=your_secret_key_here_change_in_production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# CORS Configuration (for production)
+ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+
+# Rate Limiting
+RATE_LIMIT_PER_MINUTE=60
 ```
 
 ### 3. Get Google API Key
@@ -50,6 +73,24 @@ python -m app.main
 # Or with uvicorn directly
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+## Deployment
+
+### Quick Deploy (Railway/Render/Heroku)
+The project includes all necessary configuration files for automatic deployment:
+- `Procfile` - Start command
+- `nixpacks.toml` - Build configuration  
+- `runtime.txt` - Python version
+- `Dockerfile` - Container configuration
+
+### Docker Deployment
+```bash
+# Build and run
+docker build -t ead-teachers-backend .
+docker run -p 8000:8000 -e GOOGLE_API_KEY=your_key ead-teachers-backend
+```
+
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## API Endpoints
 
@@ -70,6 +111,15 @@ Once running, visit:
 
 - **FastAPI**: Modern web framework for building APIs
 - **Agno**: AI agent framework for intelligent responses
-- **Google Gemini 2.0 Flash**: Advanced AI model for content generation
+- **Google Gemini 2.5 Flash**: Advanced AI model for content generation
 - **Pydantic**: Data validation and settings management
 - **DuckDuckGo Tools**: Web search capabilities for agents
+
+## Security Best Practices
+
+- Set `ENVIRONMENT=production` in production deployments
+- Configure `ALLOWED_ORIGINS` with your actual domain
+- Generate a strong `SECRET_KEY` for production
+- Use HTTPS in production environments
+- Regularly rotate API keys
+- Monitor logs for suspicious activity

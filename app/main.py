@@ -16,6 +16,11 @@ from app.api.v1.endpoints import (
     homework_generator
 )
 
+# Get environment variables with defaults for deployment
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", "8000"))
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
 # Create FastAPI app
 app = FastAPI(
     title="EAD Teachers Tool Backend",
@@ -23,12 +28,21 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Add CORS middleware
+# Add CORS middleware with production-ready configuration
+if ENVIRONMENT == "production":
+    # In production, restrict CORS to specific origins
+    allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if not allowed_origins or allowed_origins == [""]:
+        allowed_origins = ["https://yourdomain.com"]  # Update with your actual domain
+else:
+    # In development, allow all origins
+    allowed_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -74,7 +88,8 @@ async def root():
     return {
         "message": "EAD Teachers Tool Backend API",
         "version": "1.0.0",
-        "status": "running"
+        "status": "running",
+        "environment": ENVIRONMENT
     }
 
 @app.get("/health")
@@ -83,4 +98,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=HOST, port=PORT)
