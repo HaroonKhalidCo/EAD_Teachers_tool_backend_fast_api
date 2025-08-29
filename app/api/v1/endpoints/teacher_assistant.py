@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.schemas.teacher_assistant.requests import TeacherAssistantRequest
 from app.schemas.teacher_assistant.responses import TeacherAssistantResponse, TeacherAssistantListResponse
-from app.services.agent import teacher_assistant_agent
+from app.services.agent import get_teacher_assistant_agent
 
 router = APIRouter()
 
@@ -38,7 +38,8 @@ async def ask_teacher_assistant(request: TeacherAssistantRequest):
         """
         
         # Get response from the teacher assistant agent
-        response = teacher_assistant_agent.run(system_prompt)
+        agent = get_teacher_assistant_agent()
+        response = agent.run(system_prompt)
         
         # Extract the content from the RunResponse object
         if hasattr(response, 'content'):

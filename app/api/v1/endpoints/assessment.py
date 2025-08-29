@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.schemas.assessment.requests import AssessmentRequest
 from app.schemas.assessment.responses import AssessmentResponse, AssessmentListResponse
-from app.services.agent import assessment_agent
+from app.services.agent import get_assessment_agent
 
 router = APIRouter()
 
@@ -15,6 +15,9 @@ async def generate_assessment(request: AssessmentRequest):
     """Generate an assessment based on question types and text content"""
     
     try:
+        # Get agent when needed
+        agent = get_assessment_agent()
+        
         # Create system prompt for the agent
         question_types_str = ", ".join(request.question_types)
         system_prompt = f"""
@@ -44,7 +47,7 @@ async def generate_assessment(request: AssessmentRequest):
         """
         
         # Generate assessment using the agent
-        response = assessment_agent.run(system_prompt)
+        response = agent.run(system_prompt)
         
         # Extract the content from the RunResponse object
         if hasattr(response, 'content'):

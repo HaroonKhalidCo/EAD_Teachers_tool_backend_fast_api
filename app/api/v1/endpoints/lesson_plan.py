@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.schemas.lesson_plan.requests import LessonPlanRequest
 from app.schemas.lesson_plan.responses import LessonPlanResponse, LessonPlanListResponse
-from app.services.agent import lesson_plan_agent
+from app.services.agent import get_lesson_plan_agent
 
 router = APIRouter()
 
@@ -49,8 +49,11 @@ async def generate_lesson_plan(
         Make the plan engaging, practical, and aligned with educational best practices.
         """
         
+        # Get agent when needed
+        agent = get_lesson_plan_agent()
+        
         # Generate lesson plan using the agent
-        response = lesson_plan_agent.run(system_prompt)
+        response = agent.run(system_prompt)
         
         # Extract the content from the RunResponse object
         if hasattr(response, 'content'):

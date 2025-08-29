@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.schemas.term_plan.requests import TermPlanRequest
 from app.schemas.term_plan.responses import TermPlanResponse, TermPlanListResponse
-from app.services.agent import term_plan_agent
+from app.services.agent import get_term_plan_agent
 
 router = APIRouter()
 
@@ -15,6 +15,9 @@ async def generate_term_plan(request: TermPlanRequest):
     """Generate a term plan based on curriculum, subject, and grade"""
     
     try:
+        # Get agent when needed
+        agent = get_term_plan_agent()
+        
         # Create system prompt for the agent
         system_prompt = f"""
         Generate a comprehensive term plan based on the following requirements:
@@ -37,7 +40,7 @@ async def generate_term_plan(request: TermPlanRequest):
         """
         
         # Generate term plan using the agent
-        response = term_plan_agent.run(system_prompt)
+        response = agent.run(system_prompt)
         
         # Extract the content from the RunResponse object
         if hasattr(response, 'content'):

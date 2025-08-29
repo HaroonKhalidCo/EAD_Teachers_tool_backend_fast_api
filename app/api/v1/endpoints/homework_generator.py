@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.schemas.homework_generator.requests import HomeworkGeneratorRequest
 from app.schemas.homework_generator.responses import HomeworkGeneratorResponse, HomeworkGeneratorListResponse
-from app.services.agent import homework_generator_agent
+from app.services.agent import get_homework_generator_agent
 
 router = APIRouter()
 
@@ -15,6 +15,9 @@ async def generate_homework(request: HomeworkGeneratorRequest):
     """Generate homework based on curriculum, subject, grade, and topic"""
     
     try:
+        # Get agent when needed
+        agent = get_homework_generator_agent()
+        
         # Create system prompt for the agent
         system_prompt = f"""
         Generate comprehensive homework assignments based on the following requirements:
@@ -45,7 +48,7 @@ async def generate_homework(request: HomeworkGeneratorRequest):
         """
         
         # Generate homework using the agent
-        response = homework_generator_agent.run(system_prompt)
+        response = agent.run(system_prompt)
         
         # Extract the content from the RunResponse object
         if hasattr(response, 'content'):

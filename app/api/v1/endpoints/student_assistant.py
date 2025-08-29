@@ -5,16 +5,19 @@ from datetime import datetime
 
 from app.schemas.student_assistant.requests import StudentAssistantRequest
 from app.schemas.student_assistant.responses import StudentAssistantResponse, StudentAssistantListResponse
-from app.services.agent import student_assistant_agent
+from app.services.agent import get_student_assistant_agent
 
 router = APIRouter()
 
 
-@router.post("/ask", response_model=StudentAssistantResponse)
-async def ask_student_assistant(request: StudentAssistantRequest):
+@router.post("/query", response_model=StudentAssistantResponse)
+async def query_student_assistant(request: StudentAssistantRequest):
     """Get assistance from the student assistant"""
     
     try:
+        # Get agent when needed
+        agent = get_student_assistant_agent()
+        
         # Create system prompt for the agent
         system_prompt = f"""
         You are helping a student with the following context:
@@ -37,7 +40,7 @@ async def ask_student_assistant(request: StudentAssistantRequest):
         """
         
         # Get response from the student assistant agent
-        response = student_assistant_agent.run(system_prompt)
+        response = agent.run(system_prompt)
         
         # Extract the content from the RunResponse object
         if hasattr(response, 'content'):
