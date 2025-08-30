@@ -12,38 +12,80 @@ router = APIRouter()
 
 @router.post("/generate", response_model=AssessmentResponse)
 async def generate_assessment(request: AssessmentRequest):
-    """Generate an assessment based on question types and text content"""
+    """Generate an assessment with customizable number of MCQs and short questions based on content"""
     
     try:
+        # Validate that at least one content source is provided
+        if not request.text_content and not all([
+            request.curriculum,
+            request.grade,
+            request.class_level,
+            request.subject
+        ]):
+            raise HTTPException(
+                status_code=400, 
+                detail="Either provide detailed text_content OR all curriculum fields (curriculum, grade, class_level, subject)"
+            )
+        
         # Get agent when needed
         agent = get_assessment_agent()
         
+        # Determine content source for the prompt
+        if request.text_content:
+            content_source = f"Text Content: {request.text_content}"
+        else:
+            content_source = f"""
+            Curriculum: {request.curriculum}
+            Grade: {request.grade}
+            Class: {request.class_level}
+            Subject: {request.subject}
+            """
+        
         # Create system prompt for the agent
-        question_types_str = ", ".join(request.question_types)
         system_prompt = f"""
-        Generate a comprehensive educational assessment based on the following requirements:
+        Generate an educational assessment based on the following content:
         
-        Question Types: {question_types_str}
-        Text Content: {request.text_content}
+        {content_source}
         
-        Please create a high-quality assessment that includes:
-        1. Clear instructions for students
-        2. Well-structured questions based on the selected types: {question_types_str}
-        3. Appropriate difficulty level for the content
-        4. Answer key or rubric for grading
-        5. Learning objectives being assessed
-        6. Time allocation recommendations
+        Please create an assessment with the EXACT following structure:
         
-        For Multiple Choice Questions:
-        - Include 4-5 options per question
-        - Ensure only one correct answer
-        - Make distractors plausible but clearly incorrect
+        ========================================
+        ASSESSMENT QUESTIONS
+        ========================================
         
-        For Short Answer Questions:
-        - Provide clear expectations for response length
-        - Include sample answers or key points to look for
+        MULTIPLE CHOICE QUESTIONS ({request.mcq_count} questions):
+        ------------------------------------------------------
         
-        Make the assessment engaging, fair, and aligned with educational best practices.
+        {_generate_mcq_template(request.mcq_count)}
+        
+        SHORT ANSWER QUESTIONS ({request.short_question_count} questions):
+        --------------------------------------------------------------
+        
+        {_generate_short_question_template(request.short_question_count)}
+        
+        ========================================
+        ASSESSMENT GUIDELINES
+        ========================================
+        
+        Instructions for Students:
+        - Read each question carefully
+        - For multiple choice questions, select the BEST answer
+        - For short answer questions, provide detailed responses with examples
+        - Time allocation: {_calculate_time_allocation(request.mcq_count, request.short_question_count)} minutes total
+        
+        Grading Criteria:
+        - Multiple Choice: 2 points each (Total: {request.mcq_count * 2} points)
+        - Short Answer: 5 points each (Total: {request.short_question_count * 5} points)
+        - Total Assessment: {(request.mcq_count * 2) + (request.short_question_count * 5)} points
+        
+        Requirements:
+        - Questions must be directly related to the provided content
+        - Multiple choice questions should have 4 options (A, B, C, D)
+        - Only one correct answer per multiple choice question
+        - Short answer questions should require 2-3 sentences minimum
+        - All questions should test understanding, application, and critical thinking
+        - Difficulty should be appropriate for the content level
+        - DO NOT include any answers or answer keys
         """
         
         # Generate assessment using the agent
@@ -60,8 +102,8 @@ async def generate_assessment(request: AssessmentRequest):
         # Create response object
         assessment = AssessmentResponse(
             id=str(uuid.uuid4()),
-            question_types=request.question_types,
-            text_content=request.text_content,
+            question_types=[f"{request.mcq_count} Multiple Choice Questions", f"{request.short_question_count} Short Answer Questions"],
+            text_content=request.text_content or f"{request.curriculum} - {request.grade} - {request.class_level} - {request.subject}",
             generated_assessment=generated_content,
             created_at=datetime.utcnow(),
             status="completed"
@@ -71,6 +113,36 @@ async def generate_assessment(request: AssessmentRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating assessment: {str(e)}")
+
+def _generate_mcq_template(count: int) -> str:
+    """Generate MCQ template based on count"""
+    template = ""
+    for i in range(1, count + 1):
+        template += f"""
+        {i}. [Question {i}]
+           A) [Option A]
+           B) [Option B]
+           C) [Option C]
+           D) [Option D]
+        """
+    return template
+
+def _generate_short_question_template(count: int) -> str:
+    """Generate short question template based on count"""
+    template = ""
+    for i in range(1, count + 1):
+        question_num = i + 5  # Start from 6 if we have 5 MCQs
+        template += f"""
+        {question_num}. [Question {question_num}]
+           [Provide clear instructions for expected response length and format]
+        """
+    return template
+
+def _calculate_time_allocation(mcq_count: int, short_count: int) -> int:
+    """Calculate recommended time allocation"""
+    mcq_time = mcq_count * 2  # 2 minutes per MCQ
+    short_time = short_count * 5  # 5 minutes per short question
+    return mcq_time + short_time
 
 
 @router.get("/", response_model=AssessmentListResponse)

@@ -13,12 +13,12 @@ class AssessmentResponse(BaseModel):
     
     question_types: List[str] = Field(
         ..., 
-        description="Question types used in the assessment"
+        description="Question types used in the assessment (fixed: 5 MCQs + 2 Short Questions)"
     )
     
     text_content: str = Field(
         ..., 
-        description="The original text content used to generate the assessment"
+        description="The original content used to generate the assessment (text content or curriculum details)"
     )
     
     generated_assessment: str = Field(

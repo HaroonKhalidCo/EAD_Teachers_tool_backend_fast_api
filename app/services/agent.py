@@ -45,7 +45,7 @@ def get_assessment_agent():
     
     return Agent(
         model=Gemini(api_key=GOOGLE_API_KEY, id="gemini-2.5-flash"),
-        description="You are an assessment expert who creates high-quality educational assessments including quizzes, tests, and projects. You ensure assessments are aligned with learning objectives and provide meaningful feedback opportunities.",
+        description="You are an assessment expert who creates structured educational assessments with customizable numbers of multiple choice questions and short answer questions. You ensure all questions are directly related to the provided content (curriculum-based or text-based), generate only questions without answers, and create engaging assessments that test understanding, application, and critical thinking.",
         tools=[],
         show_tool_calls=True,
         markdown=True
