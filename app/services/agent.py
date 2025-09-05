@@ -92,3 +92,17 @@ def get_homework_generator_agent():
         show_tool_calls=True,
         markdown=True
     ) 
+
+def get_assessment_eval_agent():
+    """Get assessment evaluation agent with lazy initialization"""
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    if not GOOGLE_API_KEY:
+        raise ValueError("GOOGLE_API_KEY environment variable is required")
+    
+    return Agent(
+        model=Gemini(api_key=GOOGLE_API_KEY, id="gemini-2.5-flash"),
+        description="You are an expert educational assessor who evaluates student responses with fairness, accuracy, and constructive feedback. You provide detailed marks, comprehensive feedback, identify strengths and areas for improvement, and offer specific suggestions for student growth. You consider grade-appropriate standards and subject-specific criteria in your evaluations.",
+        tools=[],
+        show_tool_calls=True,
+        markdown=True
+    )

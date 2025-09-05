@@ -67,3 +67,34 @@ class AssessmentRequest(BaseModel):
             ]):
                 raise ValueError("Either provide detailed text_content OR all curriculum fields (curriculum, grade, class_level, subject)")
             return values
+
+
+class AssessmentEvalRequest(BaseModel):
+    """Request schema for evaluating complete assessment with questions and answers"""
+    
+    assessment_data: str = Field(
+        ...,
+        description="Complete assessment data containing both questions and student answers",
+        min_length=10,
+        example="Question 1: What is photosynthesis?\nAnswer: Photosynthesis is the process by which plants convert sunlight into energy using chlorophyll.\n\nQuestion 2: Name the main parts of a plant cell.\nAnswer: Cell wall, cell membrane, nucleus, cytoplasm, chloroplasts, and mitochondria."
+    )
+    
+    subject: Optional[str] = Field(
+        None,
+        description="The subject area for context in evaluation",
+        example="Biology"
+    )
+    
+    grade_level: Optional[str] = Field(
+        None,
+        description="The grade level for appropriate evaluation standards",
+        example="Grade 8"
+    )
+    
+    total_marks: int = Field(
+        50,
+        description="Total marks for the entire assessment",
+        ge=1,
+        le=200,
+        example=50
+    )

@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     lesson_plan,
     term_plan,
     assessment,
+    assessment_eval,
     student_assistant,
     teacher_assistant,
     homework_generator
@@ -63,6 +64,12 @@ app.include_router(
     assessment.router,
     prefix="/api/v1/assessment",
     tags=["Assessment"]
+)
+
+app.include_router(
+    assessment_eval.router,
+    prefix="/api/v1/assessment-eval",
+    tags=["Assessment Evaluation"]
 )
 
 app.include_router(
