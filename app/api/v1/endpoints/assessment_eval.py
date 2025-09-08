@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.post("/evaluate", response_model=AssessmentEvalResponse)
 async def evaluate_assessment(request: AssessmentEvalRequest):
-    """Evaluate a complete assessment with questions and answers"""
+    """Evaluate a complete assessment provided as a single detailed string containing questions and answers"""
     
     try:
         # Get the assessment evaluation agent
@@ -28,16 +28,10 @@ async def evaluate_assessment(request: AssessmentEvalRequest):
         
         {request.assessment_data}
         
-        EVALUATION CONTEXT:
-        ==================
-        Subject: {request.subject if request.subject else "Not specified"}
-        Grade Level: {request.grade_level if request.grade_level else "Not specified"}
-        Total Marks: {request.total_marks}
-        
         EVALUATION REQUIREMENTS:
         =======================
         
-        Please provide your evaluation in the following JSON format:
+        Provide your evaluation strictly in the following JSON format:
         
         {{
             "total_marks_obtained": <float>,
@@ -53,67 +47,24 @@ async def evaluate_assessment(request: AssessmentEvalRequest):
                     "max_marks": <float>,
                     "feedback": "<specific_feedback>",
                     "is_correct": <boolean>
-                }},
-                {{
-                    "question_number": 2,
-                    "question": "<question_text>",
-                    "student_answer": "<student_answer>",
-                    "marks_obtained": <float>,
-                    "max_marks": <float>,
-                    "feedback": "<specific_feedback>",
-                    "is_correct": <boolean>
                 }}
             ],
             "strengths": ["<strength1>", "<strength2>", "<strength3>"],
             "areas_for_improvement": ["<area1>", "<area2>", "<area3>"],
             "suggestions": ["<suggestion1>", "<suggestion2>", "<suggestion3>"],
-            "evaluation_criteria": "<explanation_of_criteria_used>"
+            "evaluation_criteria": "<explanation_of_criteria_used>",
+            "total_marks": <float>  
         }}
         
-        EVALUATION GUIDELINES:
-        =====================
-        
-        1. **Parse the Assessment**: 
-           - Identify all questions and their corresponding student answers
-           - Extract question numbers, question text, and student responses
-           - Determine appropriate marks allocation for each question
-        
-        2. **Individual Question Evaluation**:
-           - Evaluate each question separately
-           - Award marks based on accuracy, completeness, and understanding
-           - Provide specific feedback for each question
-           - Determine if each answer is correct or not
-        
-        3. **Overall Assessment**:
-           - Calculate total marks obtained
-           - Determine percentage and grade
-           - Provide comprehensive overall feedback
-        
-        4. **Grade Assignment**:
-           - A+ (90-100%): Exceptional work
-           - A (80-89%): Excellent work
-           - B+ (70-79%): Good work
-           - B (60-69%): Satisfactory work
-           - C+ (50-59%): Below average
-           - C (40-49%): Poor work
-           - D (30-39%): Very poor work
-           - F (0-29%): Fail
-        
-        5. **Feedback Requirements**:
-           - Provide specific, constructive feedback for each question
-           - Highlight overall strengths and areas for improvement
-           - Offer actionable suggestions
-           - Be encouraging but honest
-        
-        6. **Evaluation Criteria**:
-           - Content accuracy and relevance
-           - Understanding and comprehension
-           - Critical thinking and analysis
-           - Communication and clarity
-           - Effort and completeness
-           - Subject-specific knowledge application
-        
-        Please ensure your response is in valid JSON format and addresses all aspects of the assessment comprehensively.
+        GUIDELINES:
+        ===========
+        1. Parse the assessment text to identify questions and corresponding student answers.
+        2. Evaluate each question separately using appropriate criteria for the subject and level inferred from the text.
+        3. Assign a reasonable max_marks for each question; ensure marks_obtained ≤ max_marks.
+        4. Compute overall totals: total_marks = sum of question max_marks; total_marks_obtained = sum of marks_obtained.
+        5. Calculate percentage and assign a fair letter grade (A+ to F) based on standard scale.
+        6. Provide constructive, specific feedback for each question and overall performance, with strengths, areas for improvement, and actionable suggestions.
+        7. Respond with valid JSON only, with no extra commentary.
         """
         
         # Generate evaluation using the agent
@@ -154,12 +105,20 @@ async def evaluate_assessment(request: AssessmentEvalRequest):
                 is_correct=q_eval.get("is_correct", False)
             ))
         
+        # Determine total marks
+        if "total_marks" in eval_data and isinstance(eval_data.get("total_marks"), (int, float)):
+            computed_total_marks = eval_data.get("total_marks")
+        elif question_evaluations:
+            computed_total_marks = sum(q.max_marks for q in question_evaluations)
+        else:
+            computed_total_marks = 100
+        
         # Create response object
         evaluation = AssessmentEvalResponse(
             id=str(uuid.uuid4()),
             assessment_data=request.assessment_data,
             total_marks_obtained=eval_data.get("total_marks_obtained", 0.0),
-            total_marks=request.total_marks,
+            total_marks=int(computed_total_marks),
             percentage=eval_data.get("percentage", 0.0),
             grade=eval_data.get("grade", "F"),
             overall_feedback=eval_data.get("overall_feedback", ""),
@@ -183,26 +142,26 @@ def _create_fallback_evaluation(request: AssessmentEvalRequest, generated_conten
     
     # Basic evaluation based on assessment data length
     data_length = len(request.assessment_data)
-    total_marks = request.total_marks
+    default_total_marks = 100
     
     # Simple scoring based on data length and content quality
     if data_length < 50:
-        marks_obtained = total_marks * 0.2
+        marks_obtained = default_total_marks * 0.2
         grade = "F"
     elif data_length < 200:
-        marks_obtained = total_marks * 0.4
+        marks_obtained = default_total_marks * 0.4
         grade = "D"
     elif data_length < 500:
-        marks_obtained = total_marks * 0.6
+        marks_obtained = default_total_marks * 0.6
         grade = "C"
     elif data_length < 1000:
-        marks_obtained = total_marks * 0.8
+        marks_obtained = default_total_marks * 0.8
         grade = "B"
     else:
-        marks_obtained = total_marks * 0.9
+        marks_obtained = default_total_marks * 0.9
         grade = "A"
     
-    percentage = (marks_obtained / total_marks) * 100
+    percentage = (marks_obtained / default_total_marks) * 100
     
     return {
         "total_marks_obtained": round(marks_obtained, 2),
@@ -215,15 +174,16 @@ def _create_fallback_evaluation(request: AssessmentEvalRequest, generated_conten
                 "question": "Assessment question",
                 "student_answer": "Student response",
                 "marks_obtained": round(marks_obtained / 2, 2),
-                "max_marks": total_marks / 2,
+                "max_marks": default_total_marks / 2,
                 "feedback": "Basic evaluation completed",
-                "is_correct": marks_obtained > total_marks * 0.5
+                "is_correct": marks_obtained > default_total_marks * 0.5
             }
         ],
         "strengths": ["Provided responses", "Attempted to answer"],
         "areas_for_improvement": ["Improve response quality", "Provide more detailed answers"],
         "suggestions": ["Expand on your answers", "Provide specific examples", "Review the questions carefully"],
-        "evaluation_criteria": "Basic evaluation based on response length and content quality"
+        "evaluation_criteria": "Basic evaluation based on response length and content quality",
+        "total_marks": default_total_marks
     }
 
 
